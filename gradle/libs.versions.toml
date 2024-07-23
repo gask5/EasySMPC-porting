@@ -1,0 +1,75 @@
+[versions]
+agp = "8.5.0"
+commonsCli = "1.8.0"
+commonsCsv = "1.11.0"
+commonsMath3 = "3.6.1"
+commonsValidator = "1.9.0"
+gson = "2.10.1"
+hppc = "0.5.0"
+httpclient = "4.5.14"
+httpclient5 = "5.3.1"
+jacksonDatabind = "2.17.2"
+jakartaActivationApi = "2.1.3"
+jakartaMailApi = "2.1.3"
+jakartaWsRsApi = "3.1.0"
+javaAwt = "1.0.5"
+javaxWsRsApi = "2.1.1"
+jerseyClient = "3.1.1"
+jerseyClientVersion = "3.0.3"
+jerseyHk2 = "3.0.3"
+junit = "4.13.2"
+junitVersion = "1.1.5"
+espressoCore = "3.5.1"
+appcompat = "1.6.1"
+kryo = "5.0.3"
+log4jCore = "2.23.1"
+material = "1.10.0"
+constraintlayout = "2.1.4"
+materialVersion = "1.9.0"
+multidex = "1.0.3"
+navigationFragment = "2.6.0"
+navigationUi = "2.6.0"
+activity = "1.9.0"
+poi = "5.3.0"
+proxyVole = "1.1.4"
+tvMaterial = "1.0.0-beta01"
+
+[libraries]
+commons-cli = { module = "commons-cli:commons-cli", version.ref = "commonsCli" }
+commons-csv = { module = "org.apache.commons:commons-csv", version.ref = "commonsCsv" }
+commons-math3 = { module = "org.apache.commons:commons-math3", version.ref = "commonsMath3" }
+commons-validator = { module = "commons-validator:commons-validator", version.ref = "commonsValidator" }
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+hppc = { module = "com.carrotsearch:hppc", version.ref = "hppc" }
+httpclient = { module = "org.apache.httpcomponents:httpclient", version.ref = "httpclient" }
+httpclient5 = { module = "org.apache.httpcomponents.client5:httpclient5", version.ref = "httpclient5" }
+jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", version.ref = "jacksonDatabind" }
+jakarta-activation-api = { module = "jakarta.activation:jakarta.activation-api", version.ref = "jakartaActivationApi" }
+jakarta-mail-api = { module = "jakarta.mail:jakarta.mail-api", version.ref = "jakartaMailApi" }
+jakarta-ws-rs-api = { module = "jakarta.ws.rs:jakarta.ws.rs-api", version.ref = "jakartaWsRsApi" }
+java-awt = { module = "clojure-interop:java.awt", version.ref = "javaAwt" }
+javax-ws-rs-api = { module = "javax.ws.rs:javax.ws.rs-api", version.ref = "javaxWsRsApi" }
+jersey-client = { module = "org.glassfish.jersey.core:jersey-client", version.ref = "jerseyClient" }
+jersey-client-v303 = { module = "org.glassfish.jersey.core:jersey-client", version.ref = "jerseyClientVersion" }
+jersey-hk2 = { module = "org.glassfish.jersey.inject:jersey-hk2", version.ref = "jerseyHk2" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
+espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+kryo = { module = "com.esotericsoftware.kryo:kryo", version.ref = "kryo" }
+log4j-core = { module = "org.apache.logging.log4j:log4j-core", version.ref = "log4jCore" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
+material-v190 = { module = "com.google.android.material:material", version.ref = "materialVersion" }
+multidex = { module = "com.android.support:multidex", version.ref = "multidex" }
+navigation-fragment = { group = "androidx.navigation", name = "navigation-fragment", version.ref = "navigationFragment" }
+navigation-ui = { group = "androidx.navigation", name = "navigation-ui", version.ref = "navigationUi" }
+activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
+poi = { module = "org.apache.poi:poi", version.ref = "poi" }
+poi-ooxml = { module = "org.apache.poi:poi-ooxml", version.ref = "poi" }
+proxy-vole = { module = "org.bidib.com.github.markusbernhardt:proxy-vole", version.ref = "proxyVole" }
+tv-material = { group = "androidx.tv", name = "tv-material", version.ref = "tvMaterial" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+

@@ -1,0 +1,253 @@
+package org.bihealth.mi.easybus;
+
+import de.tu_darmstadt.cbs.emailsmpc.UIDGenerator;
+
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
+import java.nio.charset.CoderResult;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+
+/**
+ * A message manager for the bus implementations.
+ * Can be used to split larger messages into a series
+ * of smaller message fragments.
+ *
+ * @author Felix Wirth
+ * @author Fabian Prasser
+ */
+public class MessageManager {
+
+    /**
+     * Message fragments
+     */
+    private final Map<String, BusMessageFragment[]> messagesFragments;
+    /**
+     * Maximal size of a single message in byte
+     */
+    private final int maxMessageSize;
+
+    /**
+     * Creates a new instance
+     *
+     * @param maxMessageSize in bytes
+     */
+    public MessageManager(int maxMessageSize) {
+
+        // Store and init
+        this.maxMessageSize = maxMessageSize;
+        this.messagesFragments = new ConcurrentHashMap<>();
+    }
+
+    /**
+     * Merges message fragments into a message and deletes the message from its source
+     *
+     * @param message
+     * @return A message or null if the parameter was a fragment and the message is not complete, yet.
+     * @throws BusException
+     */
+    public BusMessage mergeMessage(BusMessage message) throws BusException {
+        return mergeMessage(message, true);
+    }
+
+    /**
+     * Merges message fragments into a message
+     *
+     * @param message
+     * @param deleteNow
+     * @return A message or null if the parameter was a fragment and the message is not complete, yet.
+     * @throws BusException
+     */
+    public BusMessage mergeMessage(BusMessage message, boolean deleteNow) throws BusException {
+
+        // Check if fragment
+        if (!(message instanceof BusMessageFragment)) {
+            if (deleteNow) {
+                message.delete();
+                message.expunge();
+            }
+            return message;
+        }
+
+        // Convert to fragment
+        BusMessageFragment messageFragment = (BusMessageFragment) message;
+
+        // Get or create fragments array
+        BusMessageFragment[] messageFragments = this.messagesFragments.computeIfAbsent(messageFragment.getMessageID(), new Function<String, BusMessageFragment[]>() {
+
+            @Override
+            public BusMessageFragment[] apply(String key) {
+                return new BusMessageFragment[messageFragment.getNumberOfFragments()];
+            }
+        });
+
+        // Check
+        if (messageFragment.getNumberOfFragments() > messageFragments.length) {
+            throw new BusException(String.format("Index for number of messages %d for new fragment does not suit to total number of messages %d for message %s",
+                    messageFragment.getFragmentNumber(),
+                    messageFragments.length,
+                    messageFragment.getMessageID()));
+        }
+
+        // Add to list
+        messageFragments[messageFragment.getFragmentNumber()] = messageFragment;
+
+        // If message complete return or return null
+        return messageComplete(messageFragments) ? buildMessage(messageFragment.getMessageID(), deleteNow) : null;
+    }
+
+    /**
+     * Splits a message into one or several MessageFragments
+     *
+     * @param message
+     * @return
+     * @throws IOException
+     */
+    public BusMessage[] splitMessage(BusMessage message) throws IOException {
+
+        // Create fragments of the serialized message
+        List<String> fragments = splitStringByByteLength(message.getMessage(),
+                this.maxMessageSize);
+
+        // Create objects from fragments
+        int index = 0;
+        String id = UIDGenerator.generateShortUID(10);
+        BusMessage[] result = new BusMessage[fragments.size()];
+
+        for (String fragment : fragments) {
+            result[index] = new BusMessageFragment(message.getReceiver(),
+                    message.getScope(),
+                    fragment,
+                    id,
+                    index++,
+                    fragments.size());
+        }
+
+        // Return
+        return result;
+    }
+
+    /**
+     * Builds a message object from all fragments
+     *
+     * @param messageId
+     * @param deleteNow
+     * @return
+     * @throws BusException
+     */
+    private BusMessage buildMessage(String messageId, boolean deleteNow) throws BusException {
+
+        // Init
+        BusMessageFragment[] messageFragments = this.messagesFragments.get(messageId);
+        String messageContent = "";
+
+        // Loop over fragments to re-assemble string
+        for (int index = 0; index < messageFragments.length; index++) {
+            messageContent = messageContent + messageFragments[index].getMessage();
+            if (deleteNow) {
+                messageFragments[index].delete();
+            }
+        }
+
+        // Finish
+        if (deleteNow) {
+            messageFragments[0].expunge();
+        }
+        // Return and overwrite delete function if not already deleted
+        if (deleteNow) {
+            return new BusMessage(messageFragments[0].getReceiver(),
+                    messageFragments[0].getScope(),
+                    messageContent);
+        } else {
+            return new BusMessage(messageFragments[0].getReceiver(),
+                    messageFragments[0].getScope(),
+                    messageContent) {
+
+                /** SVUID */
+                private static final long serialVersionUID = 1642391047899201666L;
+
+                @Override
+                public void delete() throws BusException {
+                    // Deletes all messages
+                    for (BusMessageFragment fragment : messageFragments) {
+                        fragment.delete();
+                    }
+
+                    // Expunge
+                    messageFragments[0].expunge();
+                }
+            };
+        }
+    }
+
+    /**
+     * Is a message complete?
+     *
+     * @param fragments
+     * @return
+     */
+    private boolean messageComplete(BusMessageFragment[] fragments) {
+
+        // Loop over array
+        for (int index = 0; index < fragments.length; index++) {
+            if (fragments[index] == null) {
+                return false;
+            }
+        }
+
+        // Finished
+        return true;
+    }
+
+    /**
+     * Splits a string into a list of strings suiting the size limit
+     * Derived from: https://stackoverflow.com/questions/48868721/splitting-a-string-with-byte-length-limits-in-java
+     *
+     * @param src
+     * @param encoding
+     * @param maxsize
+     * @return
+     */
+    private List<String> splitStringByByteLength(String src, int maxsize) {
+
+        // Prepare
+        Charset cs = StandardCharsets.UTF_8;
+        CharsetEncoder coder = cs.newEncoder();
+        ByteBuffer out = ByteBuffer.allocate(maxsize);
+        CharBuffer in = CharBuffer.wrap(src);
+        List<String> stringList = new ArrayList<>();
+        int pos = 0;
+
+        // Create result
+        while (true) {
+
+            // Encode a current chunk
+            CoderResult cr = coder.encode(in, out, true);
+            int newpos = src.length() - in.length();
+            String s = src.substring(pos, newpos);
+
+            // Add
+            stringList.add(s);
+
+            // Set new start position and rewind buffer
+            pos = newpos;
+            out.rewind();
+
+            // Finished
+            if (!cr.isOverflow()) {
+                break;
+            }
+        }
+
+        // Return
+        return stringList;
+    }
+
+}

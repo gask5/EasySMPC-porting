@@ -9,19 +9,11 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.TextView;
 import android.widget.Toast;
-
 import androidx.appcompat.app.AppCompatActivity;
-
 import com.example.easysmpc_porting.R;
 import org.bihealth.mi.easybus.Participant;
-import org.bihealth.mi.easysmpc.dataimport.ImportFile;
-
-import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,11 +29,8 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
     private ArrayAdapter<String> adapter;
     private List<String> listItems = new ArrayList<>();
     private String selectedKey = null;
-
-
     private static final String PREF_NAME = "ResultsPref";
     private SharedPreferences sharedPreferences;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -285,7 +274,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             // Perform action
             if ("participate".equals(action)) {
                 Toast.makeText(getApplicationContext(), "Participating", Toast.LENGTH_SHORT).show();
-                proceedParticipate(serverUrl, studyName, participantName, dataInput, false, false, 0, emailReceiving);
+                proceedParticipate(serverUrl, studyName, participantName, dataInput, false, false, 0, emailReceiving, passwordReceiving);
             } else if ("resume".equals(action)) {
                 String resumeFile = null;
                 String passwordSending = null;
@@ -321,10 +310,10 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
                                     boolean dataColumn,
                                     boolean hasHeader,
                                     int skipColumns,
-                                    String emailReceiving
+                                    String emailReceiving,
+                                    String passwordReceiving
     ) {
         try {
-            String password = "test";
             String authServerUrl = null; // Optional, set to null if not used
             String authRealm = "easybackend"; // Optional, set to null if not used
             String authClientId = "easy-client"; // Optional, set to null if not used
@@ -337,7 +326,7 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             ConnectionSettingsParser connectionSettingsParser;
             connectionSettingsParser = new ConnectionSettingsParserEasyBackend(
                     serverUrl,
-                    password,
+                    passwordReceiving,
                     authServerUrl,
                     authRealm,
                     authClientId,
@@ -368,32 +357,4 @@ public class MainActivity extends AppCompatActivity implements SharedPreferences
             Log.e(TAG, "An error occurred: " + e.getMessage(), e);
         }
     }
-
-    public void loadResults() {
-        // Clear the existing data
-        dataMap.clear();
-        listItems.clear();
-
-        // Retrieve the results from SharedPreferences
-        SharedPreferences sharedPreferences = getAppContext().getSharedPreferences("ResultsPref", Context.MODE_PRIVATE);
-        int count = sharedPreferences.getInt("resultCount", 0);
-
-        // Load results into dataMap and listItems
-        for (int i = 0; i < count; i++) {
-            String name = sharedPreferences.getString("result_" + i + "_name", null);
-            String value = sharedPreferences.getString("result_" + i + "_value", null);
-            if (name != null && value != null) {
-                dataMap.put(name, value);
-                listItems.add(name + ": " + value);
-            }
-        }
-
-        // Notify adapter about data changes
-        adapter.notifyDataSetChanged();
-
-        // Optional: Provide feedback to the user
-        Toast.makeText(instance, "Results loaded", Toast.LENGTH_SHORT).show();
-    }
-
-
 }
